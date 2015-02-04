@@ -10,13 +10,19 @@ import java.net.Socket;
 import java.util.HashMap;
 import java.util.Random;
 
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.TransformerConfigurationException;
+
+import org.xml.sax.SAXException;
+
 import ba.bitcamp.edibi.gui.ChatGui;
 
 public class Server {
 
 	public static final int port = 1717;
 
-	public static void serverStart() throws IOException {
+	public static void serverStart() throws IOException,
+			TransformerConfigurationException {
 		ServerSocket server = new ServerSocket(port);
 		ConnectionWriter cw = new ConnectionWriter();
 		cw.start();
@@ -36,29 +42,55 @@ public class Server {
 				ConnectionListener cl = new ConnectionListener(
 						client.getInputStream(), clientName);
 				cl.start();
-				new Message ("join%" + clientName,"%server%");
+				new Message("join%" + clientName, "%server%");
+				client.getOutputStream().write(0);
+			} else {
+				client.getOutputStream().write(-1);
 			}
-		
+
 		}
-	//	ConnectionWriter.connections.remove(sender);
+		// ConnectionWriter.connections.remove(sender);
 	}
-	
 
 	public static void main(String[] args) {
+
+		try {
+			new XmlConnection();
+
+		} catch (ParserConfigurationException e1) {
+		
+			e1.printStackTrace();
+		} catch (SAXException e1) {
+			
+			e1.printStackTrace();
+		} catch (IOException e1) {
+		
+			e1.printStackTrace();
+		}
+
 		try {
 			serverStart();
 		} catch (IOException e) {
 
 			e.printStackTrace();
+		} catch (TransformerConfigurationException e) {
+		
+			e.printStackTrace();
 		}
 	}
 
-	private static String handShake(InputStream is) throws IOException {
+	private static String handShake(InputStream is) throws IOException,
+			TransformerConfigurationException {
 
 		BufferedReader br = new BufferedReader(new InputStreamReader(is));
 
 		String str = br.readLine();
-		str=str.replaceAll("%", " ");
+		str = str.replaceAll("%", " ");
+		String password = br.readLine();
+		int resultat = XmlConnection.userLogin(str, password);
+		if (resultat != 0) {
+			return null;
+		}
 		return str;
 
 	}
